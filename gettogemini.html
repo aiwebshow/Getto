@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Getto - Swipe. Match. Keikka.</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sedgwick+Ave+Display&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@800&display=swap');
         
         * {
             margin: 0;
@@ -182,15 +182,24 @@
             height: 100%;
             object-fit: cover;
         }
-
+        
+        /* FIX: Overlap and interactivity */
         .card-info {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%);
-            padding: 120px 24px 200px 24px;
+            background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+            padding: 120px 24px 180px 24px; /* sit above action buttons */
             color: white;
+            pointer-events: none; /* Drag events pass through to card */
+            z-index: 2;
+        }
+
+        .card-info .card-title,
+        .card-info .card-description,
+        .card-info .tag {
+            pointer-events: auto; /* Re-enable for text clicks */
         }
 
         .card-title {
@@ -251,32 +260,32 @@
 
         .distance-badge {
             position: absolute;
-            top: 90px;
+            top: 20px; 
             right: 20px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
             padding: 8px 14px;
             border-radius: 20px;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 6px;
-            z-index: 60;
-            user-select: none;
+            z-index: 10;
         }
 
         .distance-badge:hover {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
             transform: scale(1.05);
         }
 
         .swipe-indicator {
             position: absolute;
-            top: 50%;
+            top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 48px;
@@ -300,7 +309,7 @@
         /* ACTION BUTTONS */
         .actions {
             position: fixed;
-            bottom: 110px;
+            bottom: 100px; /* comfortably in padding area */
             left: 50%;
             transform: translateX(-50%);
             display: none;
@@ -377,8 +386,9 @@
 
         /* DASHBOARD */
         .logo {
-            font-family: 'Sedgwick Ave Display', cursive;
+            font-family: 'Syne', cursive;
             font-size: 32px;
+            font-weight: 800;
             color: #000000;
             letter-spacing: 0px;
         }
@@ -1039,7 +1049,6 @@
 <body>
     <div class="app-container">
         <div class="content">
-            <!-- Dashboard View -->
             <div class="view active" id="dashboardView">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px 0;">
                     <div class="logo">GETTO</div>
@@ -1119,7 +1128,6 @@
                 </div>
             </div>
 
-            <!-- Swipe View -->
             <div class="swipe-view" id="swipeView">
                 <div class="card-stack" id="cardStack"></div>
                 <div class="distance-badge" onclick="openFilter();">
@@ -1130,7 +1138,6 @@
                 </div>
             </div>
 
-            <!-- Matches View -->
             <div class="view" id="matchesView">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px 0;">
                     <div class="logo">GETTO</div>
@@ -1216,7 +1223,6 @@
                 </div>
             </div>
 
-            <!-- Profile View -->
             <div class="view" id="profileView">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px 0;">
                     <div class="logo">GETTO</div>
@@ -1302,7 +1308,6 @@
             </div>
         </div>
 
-        <!-- ACTION BUTTONS -->
         <div class="actions" id="actions">
             <button class="action-btn nope" id="nopeBtn">
                 <svg viewBox="0 0 24 24" fill="white">
@@ -1316,7 +1321,6 @@
             </button>
         </div>
 
-        <!-- NAVIGAATIO - AINA NÄKYVISSÄ -->
         <div class="bottom-nav">
             <button class="nav-btn active" onclick="switchView('dashboardView')">
                 <svg viewBox="0 0 24 24">
@@ -1341,7 +1345,6 @@
             </button>
         </div>
 
-        <!-- MODALS -->
         <div class="modal-overlay" id="notificationsModal" onclick="if(event.target === this) closeNotifications()">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1509,7 +1512,6 @@
             </div>
         </div>
 
-        <!-- GIG DETAIL MODAL -->
         <div class="gig-detail-modal" id="gigDetailModal">
             <div class="gig-detail-header">
                 <button class="gig-detail-back" onclick="closeGigDetail()">
@@ -1520,15 +1522,13 @@
                 <div style="font-size: 18px; font-weight: 600;">Keikan tiedot</div>
             </div>
             <div class="gig-detail-content" id="gigDetailContent">
-                <!-- Content loaded dynamically -->
-            </div>
+                </div>
             <div class="gig-detail-apply">
                 <button class="gig-apply-btn" onclick="alert('Tykkäys lähetetty! ❤️')">Tykkää keikasta</button>
             </div>
         </div>
     </div>
 
-    <!-- MATCH POPUP -->
     <div class="match-popup" id="matchPopup">
         <div class="match-content">
             <div class="match-icon">🎉</div>
@@ -1736,7 +1736,7 @@
                 <div class="swipe-indicator right">LIKE</div>
                 <div style="width: 100%; height: 100%; background: ${gig.color};"></div>
                 ${gig.match ? `<div class="match-badge">🔥 ${gig.match}</div>` : ''}
-                <div class="card-info" onclick="event.stopPropagation(); openGigDetailFromSwipe(${index});">
+                <div class="card-info">
                     <div class="card-title">
                         ${gig.title}
                         <svg class="verified-icon" viewBox="0 0 24 24" fill="#FFD600">
@@ -1752,41 +1752,51 @@
             `;
 
             let startX = 0;
+            let startY = 0;
             let currentX = 0;
             let isDragging = false;
+            let hasMoved = false; // Threshold flag
 
             const handleStart = (e) => {
                 isDragging = true;
+                hasMoved = false;
                 startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
                 card.style.transition = 'none';
             };
 
             const handleMove = (e) => {
                 if (!isDragging) return;
                 currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-                const diff = currentX - startX;
-                const rotation = diff / 20;
+                const currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
                 
-                card.style.transform = `translateX(${diff}px) rotate(${rotation}deg)`;
-                
-                const leftIndicator = card.querySelector('.swipe-indicator.left');
-                const rightIndicator = card.querySelector('.swipe-indicator.right');
-                
-                if (diff < -50) {
-                    const progress = Math.min(Math.abs(diff) / 200, 1);
-                    leftIndicator.style.opacity = progress;
-                    leftIndicator.style.fontSize = `${48 + progress * 32}px`;
-                    rightIndicator.style.opacity = 0;
-                } else if (diff > 50) {
-                    const progress = Math.min(diff / 200, 1);
-                    rightIndicator.style.opacity = progress;
-                    rightIndicator.style.fontSize = `${48 + progress * 32}px`;
-                    leftIndicator.style.opacity = 0;
-                } else {
-                    leftIndicator.style.opacity = 0;
-                    leftIndicator.style.fontSize = '48px';
-                    rightIndicator.style.opacity = 0;
-                    rightIndicator.style.fontSize = '48px';
+                const diffX = currentX - startX;
+                const diffY = currentY - startY;
+
+                // Threshold: only start "swiping" if moved more than 10px
+                if (!hasMoved && (Math.abs(diffX) > 10 || Math.abs(diffY) > 10)) {
+                    hasMoved = true;
+                }
+
+                if (hasMoved) {
+                    const rotation = diffX / 20;
+                    card.style.transform = `translateX(${diffX}px) rotate(${rotation}deg)`;
+                    
+                    const leftIndicator = card.querySelector('.swipe-indicator.left');
+                    const rightIndicator = card.querySelector('.swipe-indicator.right');
+                    
+                    if (diffX < -50) {
+                        const progress = Math.min(Math.abs(diffX) / 200, 1);
+                        leftIndicator.style.opacity = progress;
+                        rightIndicator.style.opacity = 0;
+                    } else if (diffX > 50) {
+                        const progress = Math.min(diffX / 200, 1);
+                        rightIndicator.style.opacity = progress;
+                        leftIndicator.style.opacity = 0;
+                    } else {
+                        leftIndicator.style.opacity = 0;
+                        rightIndicator.style.opacity = 0;
+                    }
                 }
             };
 
@@ -1794,6 +1804,12 @@
                 if (!isDragging) return;
                 isDragging = false;
                 
+                // If user didn't move significantly, it's a click/tap
+                if (!hasMoved) {
+                    openGigDetailFromSwipe(index);
+                    return;
+                }
+
                 const diff = currentX - startX;
                 card.style.transition = 'transform 0.3s ease';
                 
@@ -1812,8 +1828,8 @@
             card.addEventListener('mouseup', handleEnd);
             card.addEventListener('mouseleave', handleEnd);
             
-            card.addEventListener('touchstart', handleStart);
-            card.addEventListener('touchmove', handleMove);
+            card.addEventListener('touchstart', handleStart, { passive: true });
+            card.addEventListener('touchmove', handleMove, { passive: true });
             card.addEventListener('touchend', handleEnd);
 
             return card;
