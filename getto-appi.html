@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getto Appi - Swipe. Match. Keikka.</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1A1A1A;
+            --accent: #FF6B35;
+            --secondary: #F7931E;
+            --trust: #00A8E8;
+            --success: #00C9A7;
+            --bg: #0D0D0D;
+            --card-bg: #1E1E1E;
+            --text: #FFFFFF;
+            --text-muted: #999999;
+            --shadow: rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255, 107, 53, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 107, 53, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(40px, 40px); }
+        }
+
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--bg);
+            position: relative;
+            box-shadow: 0 0 60px rgba(255, 107, 53, 0.2);
+            overflow: hidden;
+        }
+
+        /* Top Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #000 100%);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent);
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .icon-btn:hover {
+            background: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .badge-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 430px;
+            background: linear-gradient(to top, var(--primary), rgba(26, 26, 26, 0.98));
+            border-top: 2px solid var(--accent);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .nav-item.active {
+            opacity: 1;
+        }
+
+        .nav-item:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+
+        .nav-icon {
+            width: 30px;
+            height: 30px;
+            fill: var(--text);
+        }
+
+        .nav-item.active .nav-icon {
+            fill: var(--accent);
+        }
+
+        .nav-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Main Content Area */
+        .content {
+            padding: 20px;
+            padding-bottom: 100px;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* View switching */
+        .view {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SWIPE VIEW - Tinder style */
+        .swipe-container {
+            position: relative;
+            height: 600px;
+            margin-top: 20px;
+        }
+
+        .gig-card {
+            position: absolute;
+            width: 100%;
+            height: 550px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px var(--shadow);
+            cursor: grab;
+            transition: transform 0.3s ease;
+            border: 2px solid rgba(255, 107, 53, 0.2);
+        }
+
+        .gig-card:active {
+            cursor: grabbing;
+        }
+
+        .gig-card.swiping-left {
+            border-color: #ff4444;
+        }
+
+        .gig-card.swiping-right {
+            border-color: var(--success);
+        }
+
+        .gig-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            position: relative;
+        }
+
+        .gig-type-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--accent);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+
+        .gig-info {
+            padding: 25px;
+        }
+
+        .gig-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .gig-company {
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .gig-details {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 107, 53, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            border: 1px solid rgba(255, 107, 53, 0.3);
+        }
+
+        .gig-description {
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .swipe-actions {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .action-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--card-bg);
+        }
+
+        .action-btn.nope {
+            border-color: #ff4444;
+        }
+
+        .action-btn.like {
+            border-color: var(--success);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .action-btn.nope:hover {
+            background: #ff4444;
+        }
+
+        .action-btn.like:hover {
+            background: var(--success);
+        }
+
+        /* PROFILE VIEW */
+        .profile-header {
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 0 0 30px 30px;
+            margin: -20px -20px 30px -20px;
+            position: relative;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid white;
+            margin-bottom: 15px;
+        }
+
+        .profile-name {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        .profile-bio {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255, 107, 53, 0.2);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .skills-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+            color: var(--accent);
+        }
+
+        .skills-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .skill-tag {
+            background: rgba(255, 107, 53, 0.15);
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            border: 1px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .skill-badge {
+            width: 16px;
+            height: 16px;
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .cases-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .case-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 107, 53, 0.2);
+        }
+
+        .case-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .case-info {
+            padding: 12px;
+        }
+
+        .case-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .case-client {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* MATCHES VIEW */
+        .matches-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .match-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            border: 1px solid rgba(255, 107, 53, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .match-card:hover {
+            border-color: var(--accent);
+            transform: translateX(5px);
+        }
+
+        .match-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+        }
+
+        .match-info {
+            flex: 1;
+        }
+
+        .match-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .match-gig {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .match-status {
+            background: var(--success);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        /* GANGS VIEW */
+        .gang-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255, 107, 53, 0.3);
+        }
+
+        .gang-header {
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            padding: 25px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .gang-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            border: 3px solid white;
+        }
+
+        .gang-name {
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        .gang-members {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .gang-info {
+            padding: 20px;
+        }
+
+        .gang-description {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .gang-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        /* MAP VIEW */
+        .map-container {
+            height: 400px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255, 107, 53, 0.2);
+        }
+
+        .map-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            position: relative;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            border: 3px solid white;
+            cursor: pointer;
+            animation: markerBounce 1.5s ease infinite;
+        }
+
+        @keyframes markerBounce {
+            0%, 100% { transform: rotate(-45deg) translateY(0); }
+            50% { transform: rotate(-45deg) translateY(-10px); }
+        }
+
+        .nearby-gangs {
+            display: grid;
+            gap: 15px;
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+        }
+
+        .empty-text {
+            color: var(--text-muted);
+        }
+
+        /* OVERLAY INDICATORS */
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 80px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 20;
+            text-transform: uppercase;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        .swipe-indicator.left {
+            left: 30px;
+            color: #ff4444;
+        }
+
+        .swipe-indicator.right {
+            right: 30px;
+            color: var(--success);
+        }
+
+        .swiping-left .swipe-indicator.left,
+        .swiping-right .swipe-indicator.right {
+            opacity: 1;
+        }
+
+        /* MATCH POPUP */
+        .match-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .match-popup.active {
+            display: flex;
+        }
+
+        .match-content {
+            text-align: center;
+            padding: 40px;
+            animation: scaleIn 0.5s ease;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .match-text {
+            font-size: 60px;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 4px;
+        }
+
+        .match-gig-name {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .match-btn {
+            background: var(--accent);
+            padding: 15px 40px;
+            border-radius: 25px;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .match-btn:hover {
+            background: var(--secondary);
+            transform: scale(1.05);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 480px) {
+            .app-container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">GETTO</div>
+            <div class="header-icons">
+                <div class="icon-btn" id="notificationsBtn">
+                    <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+                    </svg>
+                    <div class="badge-count">3</div>
+                </div>
+                <div class="icon-btn" id="settingsBtn">
+                    <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- SWIPE VIEW -->
+            <div id="swipeView" class="view active">
+                <div class="swipe-container" id="swipeContainer">
+                    <!-- Cards will be added here by JavaScript -->
+                </div>
+                <div class="swipe-actions">
+                    <div class="action-btn nope" id="nopeBtn">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="#ff4444">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                    </div>
+                    <div class="action-btn like" id="likeBtn">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="#00C9A7">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MATCHES VIEW -->
+            <div id="matchesView" class="view">
+                <h2 class="section-title">Omat matchit</h2>
+                <div class="matches-grid" id="matchesGrid">
+                    <!-- Matches will be added here -->
+                </div>
+            </div>
+
+            <!-- PROFILE VIEW -->
+            <div id="profileView" class="view">
+                <div class="profile-header">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%231a1a1a'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23FF6B35' font-size='48' font-weight='bold'%3EM%3C/text%3E%3C/svg%3E" class="profile-avatar" alt="Profile">
+                    <div class="profile-name">Mikko Virtanen</div>
+                    <div class="profile-bio">Moniosaaja Helsingistä 💪 Videot, siivous & koodaus</div>
+                </div>
+
+                <div class="profile-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">47</div>
+                        <div class="stat-label">Keikkaa</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">4.8</div>
+                        <div class="stat-label">Rating</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">12</div>
+                        <div class="stat-label">Badgea</div>
+                    </div>
+                </div>
+
+                <div class="skills-section">
+                    <h3 class="section-title">Taidot</h3>
+                    <div class="skills-grid">
+                        <div class="skill-tag">
+                            <span>Videokuvaus</span>
+                            <div class="skill-badge">✓</div>
+                        </div>
+                        <div class="skill-tag">
+                            <span>Ikkunanpesu</span>
+                            <div class="skill-badge">✓</div>
+                        </div>
+                        <div class="skill-tag">
+                            <span>Koodaus</span>
+                        </div>
+                        <div class="skill-tag">
+                            <span>Valokuvaus</span>
+                        </div>
+                        <div class="skill-tag">
+                            <span>Muutto</span>
+                            <div class="skill-badge">✓</div>
+                        </div>
+                        <div class="skill-tag">
+                            <span>Siivous</span>
+                            <div class="skill-badge">✓</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="skills-section">
+                    <h3 class="section-title">Portfolio</h3>
+                    <div class="cases-grid">
+                        <div class="case-card">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect fill='%231a1a1a' width='200' height='150'/%3E%3Ccircle cx='100' cy='75' r='30' fill='%23FF6B35'/%3E%3C/svg%3E" class="case-image" alt="Case">
+                            <div class="case-info">
+                                <div class="case-title">Promo Video</div>
+                                <div class="case-client">Ravintola Pastis</div>
+                            </div>
+                        </div>
+                        <div class="case-card">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect fill='%231a1a1a' width='200' height='150'/%3E%3Crect x='60' y='50' width='80' height='50' fill='%2300C9A7'/%3E%3C/svg%3E" class="case-image" alt="Case">
+                            <div class="case-info">
+                                <div class="case-title">Toimisto Siivous</div>
+                                <div class="case-client">TechHub Oy</div>
+                            </div>
+                        </div>
+                        <div class="case-card">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect fill='%231a1a1a' width='200' height='150'/%3E%3Cpolygon points='100,40 120,90 80,90' fill='%23F7931E'/%3E%3C/svg%3E" class="case-image" alt="Case">
+                            <div class="case-info">
+                                <div class="case-title">Web Redesign</div>
+                                <div class="case-client">Startup XYZ</div>
+                            </div>
+                        </div>
+                        <div class="case-card">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='150'%3E%3Crect fill='%231a1a1a' width='200' height='150'/%3E%3Cpath d='M50,75 L100,50 L150,75 L100,100 Z' fill='%2300A8E8'/%3E%3C/svg%3E" class="case-image" alt="Case">
+                            <div class="case-info">
+                                <div class="case-title">Muuttokeikka</div>
+                                <div class="case-client">Perhe Korhonen</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GANGS VIEW -->
+            <div id="gangsView" class="view">
+                <h2 class="section-title">Gangit lähellä</h2>
+                
+                <div class="map-container">
+                    <div class="map-placeholder">
+                        <div class="map-marker" style="top: 30%; left: 40%;"></div>
+                        <div class="map-marker" style="top: 60%; left: 25%;"></div>
+                        <div class="map-marker" style="top: 45%; left: 70%;"></div>
+                        <svg width="100%" height="100%" style="opacity: 0.1;">
+                            <line x1="0" y1="0" x2="100%" y2="100%" stroke="#FF6B35" stroke-width="1"/>
+                            <line x1="100%" y1="0" x2="0" y2="100%" stroke="#FF6B35" stroke-width="1"/>
+                            <circle cx="50%" cy="50%" r="80" fill="none" stroke="#FF6B35" stroke-width="2"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="nearby-gangs">
+                    <div class="gang-card">
+                        <div class="gang-header">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='%231a1a1a' width='80' height='80' rx='16'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23FF6B35' font-size='32' font-weight='bold'%3EPC%3C/text%3E%3C/svg%3E" class="gang-logo" alt="Gang Logo">
+                            <div>
+                                <div class="gang-name">PIXEL CREW</div>
+                                <div class="gang-members">8 jäsentä • 2.1 km</div>
+                            </div>
+                        </div>
+                        <div class="gang-info">
+                            <div class="gang-description">
+                                Videokuvaajien ja graafikkojen tiimi. Tehdään kaikkee videosta somecontenttiin. Porukalla on enemmän voimaa! 🎥🔥
+                            </div>
+                            <div class="gang-skills">
+                                <div class="skill-tag">Video</div>
+                                <div class="skill-tag">Grafiikka</div>
+                                <div class="skill-tag">Valokuvaus</div>
+                                <div class="skill-tag">Editointi</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="gang-card">
+                        <div class="gang-header">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='%231a1a1a' width='80' height='80' rx='16'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%2300C9A7' font-size='32' font-weight='bold'%3ESP%3C/text%3E%3C/svg%3E" class="gang-logo" alt="Gang Logo">
+                            <div>
+                                <div class="gang-name">SIIVOUS POSSE</div>
+                                <div class="gang-members">5 jäsentä • 0.8 km</div>
+                            </div>
+                        </div>
+                        <div class="gang-info">
+                            <div class="gang-description">
+                                Me hoidetaan sun tilat kuntoon äkkii ja ammattimaisesti. Ikkunat, toimistot, kodut – kaikki puhtaaks! ✨
+                            </div>
+                            <div class="gang-skills">
+                                <div class="skill-tag">Siivous</div>
+                                <div class="skill-tag">Ikkunanpesu</div>
+                                <div class="skill-tag">Toimistot</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="gang-card">
+                        <div class="gang-header">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='%231a1a1a' width='80' height='80' rx='16'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%2300A8E8' font-size='32' font-weight='bold'%3ECC%3C/text%3E%3C/svg%3E" class="gang-logo" alt="Gang Logo">
+                            <div>
+                                <div class="gang-name">CODE COLLECTIVE</div>
+                                <div class="gang-members">12 jäsentä • 3.5 km</div>
+                            </div>
+                        </div>
+                        <div class="gang-info">
+                            <div class="gang-description">
+                                Full-stack devaajien jengi. React, Node, Python – me koodataan mitä vaan. Myös nopeet fixit ja bugien korjaukset. 💻⚡
+                            </div>
+                            <div class="gang-skills">
+                                <div class="skill-tag">React</div>
+                                <div class="skill-tag">Node.js</div>
+                                <div class="skill-tag">Python</div>
+                                <div class="skill-tag">Web Design</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item active" data-view="swipeView">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <div class="nav-label">Keikat</div>
+            </div>
+            <div class="nav-item" data-view="matchesView">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                </svg>
+                <div class="nav-label">Matchit</div>
+            </div>
+            <div class="nav-item" data-view="gangsView">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+                <div class="nav-label">Gangit</div>
+            </div>
+            <div class="nav-item" data-view="profileView">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <div class="nav-label">Profiili</div>
+            </div>
+        </div>
+
+        <!-- Match Popup -->
+        <div class="match-popup" id="matchPopup">
+            <div class="match-content">
+                <div class="match-text">MATCH!</div>
+                <div class="match-gig-name" id="matchGigName">Videokuvaus - Ravintola Pastis</div>
+                <button class="match-btn" onclick="closeMatchPopup()">Jatka swipettämistä</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data for gigs
+        const gigs = [
+            {
+                id: 1,
+                type: 'Video',
+                title: 'Videokuvaus - Ravintola Pastis',
+                company: 'Ravintola Pastis',
+                location: 'Punavuori, Helsinki',
+                payment: '150€/projekti',
+                date: 'Pe 4.4.2025',
+                description: 'Tarvitaan videokuvaaja kuvaamaan ravintolan uusi menu. 2-3h sessio, edit erikseen sovittavissa.',
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Cdefs%3E%3ClinearGradient id='grad1' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23FF6B35;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23F7931E;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23grad1)' width='400' height='300'/%3E%3Ccircle cx='200' cy='150' r='60' fill='white' opacity='0.3'/%3E%3Cpath d='M170,130 L170,170 L210,150 Z' fill='white'/%3E%3C/svg%3E"
+            },
+            {
+                id: 2,
+                type: 'Siivous',
+                title: 'Toimiston siivous',
+                company: 'TechHub Oy',
+                location: 'Kamppi, Helsinki',
+                payment: '25€/h',
+                date: 'Ti 8.4.2025',
+                description: 'Toimiston yleissiivous. Noin 200m2 tila, pölyjen pyyhintä, lattioiden imuroidbti ja pesu.',
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Cdefs%3E%3ClinearGradient id='grad2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%2300C9A7;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%2300A8E8;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23grad2)' width='400' height='300'/%3E%3Ccircle cx='150' cy='150' r='40' fill='white' opacity='0.3'/%3E%3Ccircle cx='250' cy='180' r='50' fill='white' opacity='0.2'/%3E%3C/svg%3E"
+            },
+            {
+                id: 3,
+                type: 'Muutto',
+                title: 'Apua muutossa',
+                company: 'Perhe Virtanen',
+                location: 'Kallio → Töölö',
+                payment: '20€/h',
+                date: 'La 12.4.2025',
+                description: 'Tarvitaan 2 apumiestä muuttoon. Ei isoja huonekaluja, lähinnä laatikoita ja pienempää tavaraa. Oma auto plussaa!',
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Cdefs%3E%3ClinearGradient id='grad3' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23F7931E;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23FF6B35;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23grad3)' width='400' height='300'/%3E%3Crect x='120' y='80' width='160' height='140' fill='white' opacity='0.3'/%3E%3Cpath d='M150,100 L250,100 L250,200 L150,200 Z' fill='white' opacity='0.2'/%3E%3C/svg%3E"
+            },
+            {
+                id: 4,
+                type: 'DJ',
+                title: 'DJ-keikka yksityisjuhliin',
+                company: 'Matti Korhonen',
+                location: 'Espoo',
+                payment: '200€/ilta',
+                date: 'Pe 18.4.2025',
+                description: 'Yksityisjuhlat, n. 50 henkeä. House/techno miksausta 4h. Omat laitteet mukaan.',
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Cdefs%3E%3ClinearGradient id='grad4' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%231a1a1a;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23FF6B35;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23grad4)' width='400' height='300'/%3E%3Ccircle cx='200' cy='150' r='80' fill='none' stroke='white' stroke-width='4' opacity='0.4'/%3E%3Ccircle cx='200' cy='150' r='50' fill='white' opacity='0.3'/%3E%3C/svg%3E"
+            },
+            {
+                id: 5,
+                type: 'Koodaus',
+                title: 'React-kehittäjä freelance',
+                company: 'Startup ABC',
+                location: 'Remote/Kalasatama',
+                payment: '50€/h',
+                date: 'Jatkuva',
+                description: 'Tarvitaan React-devaaja päivittämään web-appi. TypeScript osaaminen plussaa. 20-40h projekti.',
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Cdefs%3E%3ClinearGradient id='grad5' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%2300A8E8;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%231a1a1a;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23grad5)' width='400' height='300'/%3E%3Ctext x='200' y='160' text-anchor='middle' fill='white' font-size='80' font-family='monospace' opacity='0.4'%3E%26lt;/%26gt;%3C/text%3E%3C/svg%3E"
+            },
+            {
+                id: 6,
+                type: 'Valokuvaus',
+                title: 'Tuotekuvaus nettikauppaan',
+                company: 'Fashion Brand X',
+                location: 'Punavuori, Helsinki',
+                payment: '300€/projekti',
+                date: 'To 10.4.2025',
+                description: 'Tuotekuvia vaatteista nettikauppaa varten. 30-40 tuotetta, valkoinen tausta. Studio käytettävissä.',
+                image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Cdefs%3E%3ClinearGradient id='grad6' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23F7931E;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%2300C9A7;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23grad6)' width='400' height='300'/%3E%3Ccircle cx='200' cy='120' r='50' fill='white' opacity='0.3'/%3E%3Crect x='150' y='120' width='100' height='80' rx='10' fill='white' opacity='0.2'/%3E%3C/svg%3E"
+            }
+        ];
+
+        let currentGigIndex = 0;
+        let matches = [];
+        let isDragging = false;
+        let startX = 0;
+        let currentX = 0;
+
+        // Initialize app
+        function init() {
+            renderGigCards();
+            setupNavigation();
+            setupSwipeHandlers();
+            renderMatches();
+        }
+
+        // Render gig cards
+        function renderGigCards() {
+            const container = document.getElementById('swipeContainer');
+            container.innerHTML = '';
+            
+            // Render up to 3 cards (current + 2 behind)
+            for (let i = 0; i < Math.min(3, gigs.length - currentGigIndex); i++) {
+                const gig = gigs[currentGigIndex + i];
+                const card = createGigCard(gig, i);
+                container.appendChild(card);
+            }
+        }
+
+        // Create gig card element
+        function createGigCard(gig, index) {
+            const card = document.createElement('div');
+            card.className = 'gig-card';
+            card.style.zIndex = 10 - index;
+            card.style.transform = `translateY(${index * 5}px) scale(${1 - index * 0.05})`;
+            card.dataset.gigId = gig.id;
+
+            card.innerHTML = `
+                <div class="swipe-indicator left">NOPE</div>
+                <div class="swipe-indicator right">LIKE</div>
+                <div style="position: relative;">
+                    <img src="${gig.image}" class="gig-image" alt="${gig.title}">
+                    <div class="gig-type-badge">${gig.type}</div>
+                </div>
+                <div class="gig-info">
+                    <div class="gig-title">${gig.title}</div>
+                    <div class="gig-company">${gig.company}</div>
+                    <div class="gig-details">
+                        <div class="detail-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                            ${gig.location}
+                        </div>
+                        <div class="detail-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                            </svg>
+                            ${gig.payment}
+                        </div>
+                        <div class="detail-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                            </svg>
+                            ${gig.date}
+                        </div>
+                    </div>
+                    <div class="gig-description">${gig.description}</div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Setup swipe handlers
+        function setupSwipeHandlers() {
+            const container = document.getElementById('swipeContainer');
+
+            container.addEventListener('mousedown', startDrag);
+            container.addEventListener('mousemove', drag);
+            container.addEventListener('mouseup', endDrag);
+            container.addEventListener('mouseleave', endDrag);
+
+            container.addEventListener('touchstart', startDrag);
+            container.addEventListener('touchmove', drag);
+            container.addEventListener('touchend', endDrag);
+
+            document.getElementById('likeBtn').addEventListener('click', () => swipeCard('right'));
+            document.getElementById('nopeBtn').addEventListener('click', () => swipeCard('left'));
+        }
+
+        function startDrag(e) {
+            const card = document.querySelector('.gig-card');
+            if (!card) return;
+
+            isDragging = true;
+            startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+
+            const card = document.querySelector('.gig-card');
+            if (!card) return;
+
+            currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            const deltaX = currentX - startX;
+            const rotation = deltaX / 10;
+
+            card.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
+
+            if (deltaX < -50) {
+                card.classList.add('swiping-left');
+                card.classList.remove('swiping-right');
+            } else if (deltaX > 50) {
+                card.classList.add('swiping-right');
+                card.classList.remove('swiping-left');
+            } else {
+                card.classList.remove('swiping-left', 'swiping-right');
+            }
+        }
+
+        function endDrag(e) {
+            if (!isDragging) return;
+
+            const card = document.querySelector('.gig-card');
+            if (!card) return;
+
+            isDragging = false;
+            const deltaX = currentX - startX;
+
+            if (Math.abs(deltaX) > 100) {
+                swipeCard(deltaX > 0 ? 'right' : 'left');
+            } else {
+                card.style.transform = '';
+                card.classList.remove('swiping-left', 'swiping-right');
+            }
+        }
+
+        function swipeCard(direction) {
+            const card = document.querySelector('.gig-card');
+            if (!card) return;
+
+            const gig = gigs[currentGigIndex];
+
+            if (direction === 'right') {
+                // It's a match!
+                matches.push(gig);
+                showMatchPopup(gig);
+            }
+
+            // Animate card away
+            const distance = direction === 'right' ? 1000 : -1000;
+            card.style.transition = 'transform 0.5s ease';
+            card.style.transform = `translateX(${distance}px) rotate(${direction === 'right' ? 30 : -30}deg)`;
+
+            setTimeout(() => {
+                currentGigIndex++;
+                if (currentGigIndex < gigs.length) {
+                    renderGigCards();
+                } else {
+                    showEmptyState();
+                }
+            }, 500);
+        }
+
+        function showMatchPopup(gig) {
+            const popup = document.getElementById('matchPopup');
+            document.getElementById('matchGigName').textContent = gig.title;
+            popup.classList.add('active');
+
+            setTimeout(() => {
+                popup.classList.remove('active');
+            }, 3000);
+        }
+
+        function closeMatchPopup() {
+            document.getElementById('matchPopup').classList.remove('active');
+        }
+
+        function showEmptyState() {
+            const container = document.getElementById('swipeContainer');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🎯</div>
+                    <div class="empty-title">Ei enempää keikkoja tänään!</div>
+                    <div class="empty-text">Tuu takas myöhemmin, uusia tulee joka päivä</div>
+                </div>
+            `;
+        }
+
+        function renderMatches() {
+            const grid = document.getElementById('matchesGrid');
+            
+            if (matches.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">💬</div>
+                        <div class="empty-title">Ei vielä matcheja</div>
+                        <div class="empty-text">Ala selailee keikkoja ja tykkää kiinnostavista!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = matches.map(gig => `
+                <div class="match-card">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='30' fill='%23FF6B35'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='24' font-weight='bold'%3E${gig.company[0]}%3C/text%3E%3C/svg%3E" class="match-avatar" alt="${gig.company}">
+                    <div class="match-info">
+                        <div class="match-name">${gig.company}</div>
+                        <div class="match-gig">${gig.title}</div>
+                    </div>
+                    <div class="match-status">Match!</div>
+                </div>
+            `).join('');
+        }
+
+        // Setup navigation
+        function setupNavigation() {
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Update active state
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+
+                    // Show corresponding view
+                    const viewId = item.dataset.view;
+                    document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+                    document.getElementById(viewId).classList.add('active');
+
+                    // Update matches when switching to matches view
+                    if (viewId === 'matchesView') {
+                        renderMatches();
+                    }
+                });
+            });
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
