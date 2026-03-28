@@ -251,26 +251,26 @@
 
         .distance-badge {
             position: absolute;
-            top: 90px;
+            top: 20px; /* Adjusted to match top-right positioning */
             right: 20px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
             padding: 8px 14px;
             border-radius: 20px;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 6px;
-            z-index: 60;
-            user-select: none;
+            z-index: 10;
         }
 
         .distance-badge:hover {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
             transform: scale(1.05);
         }
 
