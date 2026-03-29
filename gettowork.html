@@ -1,0 +1,2640 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getto - Swipe. Match. Keikka.</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sedgwick+Ave+Display&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg: #f5f5f5;
+            --card-bg: #FFFFFF;
+            --primary: #1d233l;
+            --accent: #8eff01;
+            --accent-purple: #8b53fe;
+            --text: #1d233l;
+            --text-light: #666666;
+            --shadow: rgba(0, 0, 0, 0.08);
+            --shadow-lg: rgba(0, 0, 0, 0.12);
+            --dark-bg: #1d233l;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        body.swipe-mode {
+            overflow: hidden;
+        }
+
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            background: var(--bg);
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* NAVIGAATIO - AINA NÄKYVISSÄ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 40px);
+            max-width: 380px;
+            background: rgba(29, 35, 51, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 100px;
+            padding: 8px;
+            display: flex !important;
+            justify-content: space-around;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            flex: 1;
+            height: 56px;
+            border: none;
+            background: transparent;
+            border-radius: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .nav-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-btn.active {
+            background: #8eff01;
+            box-shadow: 0 0 20px rgba(142, 255, 1, 0.6), 
+                        0 0 40px rgba(142, 255, 1, 0.4),
+                        0 4px 12px rgba(142, 255, 1, 0.3);
+        }
+
+        .nav-btn.active svg {
+            fill: #000000;
+        }
+
+        .nav-btn:not(.active):hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        body.swipe-mode .nav-btn svg {
+            fill: white;
+        }
+
+        body.swipe-mode .nav-btn.active {
+            box-shadow: none;
+        }
+
+        body.swipe-mode .nav-btn.active svg {
+            fill: #000000;
+        }
+
+        body.swipe-mode .nav-btn.active svg {
+            fill: var(--primary);
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: 10px;
+            right: calc(50% - 16px);
+            width: 8px;
+            height: 8px;
+            background: #FF4444;
+            border-radius: 50%;
+            border: 2px solid rgba(108, 99, 255, 0.15);
+        }
+
+        /* CONTENT */
+        .content {
+            padding: 0;
+            position: relative;
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+
+        body.swipe-mode .content {
+            min-height: 0;
+            height: 100vh;
+            overflow: hidden;
+            padding-bottom: 0;
+        }
+
+        /* VIEWS */
+        .view {
+            display: none;
+            padding: 0 20px 20px 20px;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* SWIPE VIEW */
+        .swipe-view {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .swipe-view.active {
+            display: block;
+        }
+
+        .card-stack {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .gig-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.3s ease;
+        }
+
+        .gig-card:active {
+            cursor: grabbing;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%);
+            padding: 120px 24px 200px 24px;
+            color: white;
+        }
+
+        .card-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .verified-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .card-location {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+
+        .card-description {
+            font-size: 15px;
+            line-height: 1.5;
+            opacity: 0.85;
+            margin-bottom: 16px;
+        }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .match-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            color: #000;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 3;
+        }
+
+        .distance-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 60;
+            user-select: none;
+        }
+
+        .distance-badge:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: scale(1.05);
+        }
+
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 800;
+            opacity: 0;
+            transition: all 0.1s;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .swipe-indicator.left {
+            color: #FF4444;
+            text-shadow: 0 0 30px rgba(255, 68, 68, 0.8);
+        }
+
+        .swipe-indicator.right {
+            color: var(--accent);
+            text-shadow: 0 0 30px rgba(45, 216, 133, 0.8);
+        }
+
+        /* ACTION BUTTONS */
+        .actions {
+            position: fixed;
+            bottom: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            justify-content: center;
+            gap: 30px;
+            z-index: 100;
+        }
+
+        .actions.active {
+            display: flex;
+        }
+
+        .action-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px var(--shadow-lg);
+        }
+
+        .action-btn:active {
+            transform: scale(0.9);
+        }
+
+        .action-btn.bounce {
+            animation: btnBounce 0.4s ease;
+        }
+
+        @keyframes btnBounce {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.2); }
+            60% { transform: scale(0.95); }
+            80% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .swipe-indicator.bounce {
+            animation: indicatorBounce 0.5s ease;
+        }
+
+        @keyframes indicatorBounce {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .action-btn.nope {
+            background: #FF4444;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.6), 
+                        0 0 40px rgba(255, 68, 68, 0.4),
+                        0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-btn.nope:hover {
+            background: #FF2222;
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 68, 68, 0.8), 
+                        0 0 60px rgba(255, 68, 68, 0.5);
+        }
+
+        .action-btn.like {
+            background: #8eff01;
+            box-shadow: 0 0 20px rgba(142, 255, 1, 0.6), 
+                        0 0 40px rgba(142, 255, 1, 0.4),
+                        0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-btn.like:hover {
+            background: #7de600;
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(142, 255, 1, 0.8), 
+                        0 0 60px rgba(142, 255, 1, 0.5);
+        }
+
+        .action-btn svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        /* DASHBOARD */
+        .logo {
+            width: 120px;
+            height: auto;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .icon-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--primary);
+        }
+
+        .notification-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-nav);
+            border-radius: 50%;
+            border: 2px solid var(--card-bg);
+        }
+
+        .welcome-section {
+            margin-bottom: 24px;
+        }
+
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            color: var(--text-light);
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .bento-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 2px 12px var(--shadow);
+        }
+
+        .bento-card.large {
+            grid-column: span 2;
+        }
+
+        .bento-card.tall {
+            grid-row: span 2;
+        }
+
+        .card-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .card-stat {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .card-stat-label {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .badge-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(142, 255, 1, 0.1);
+            border: 2px solid #8eff01;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .badge-icon:hover {
+            background: #8eff01;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(142, 255, 1, 0.6);
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-nav);
+            flex-shrink: 0;
+        }
+
+        .skill-badge {
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .skill-badge.video {
+            background: linear-gradient(135deg, #FF6B9D, #FF8FB5);
+        }
+
+        .skill-badge.dj {
+            background: linear-gradient(135deg, #6C63FF, #8B7FFF);
+        }
+
+        .skill-badge.coding {
+            background: linear-gradient(135deg, #64B5F6, #81D4FA);
+        }
+
+        .skill-badge.photo {
+            background: linear-gradient(135deg, #FFD600, #FFA726);
+        }
+
+        .skill-badge.cleaning {
+            background: linear-gradient(135deg, #81C784, #A5D6A7);
+        }
+
+        .skill-badge.verified {
+            background: linear-gradient(135deg, #FFD600, #FFA726);
+            box-shadow: 0 0 20px rgba(255, 214, 0, 0.4);
+        }
+
+        /* MODALS */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 500;
+            display: none;
+            align-items: flex-end;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 430px;
+            margin: 0 auto;
+            border-radius: 28px 28px 0 0;
+            padding: 24px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUpModal 0.3s ease;
+        }
+
+        @keyframes slideUpModal {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .notification-item {
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 16px;
+            margin-bottom: 12px;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .notification-text {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+
+        .notification-time {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .settings-item {
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .filter-option {
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .filter-option:hover {
+            background: var(--accent-nav);
+            transform: translateX(4px);
+        }
+
+        .filter-option.active {
+            background: var(--accent-nav);
+            font-weight: 600;
+        }
+
+        /* CHAT MODAL */
+        .chat-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #1d2333;
+            z-index: 600;
+            display: none;
+            flex-direction: column;
+        }
+
+        .chat-modal.active {
+            display: flex;
+        }
+
+        .chat-header {
+            background: #1d2333;
+            color: white;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid rgba(142, 255, 1, 0.2);
+        }
+
+        .chat-back-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(142, 255, 1, 0.2);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .chat-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #8eff01;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #1d2333;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .message.received {
+            background: #8b53fe;
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 0 15px rgba(139, 83, 254, 0.5);
+        }
+
+        .message.sent {
+            background: #8eff01;
+            color: #000;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 0 15px rgba(142, 255, 1, 0.5);
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        .chat-input-container {
+            padding: 16px;
+            background: #1d2333;
+            border-top: 1px solid rgba(142, 255, 1, 0.2);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 24px;
+            border: 2px solid #8eff01;
+            background: #8eff01;
+            color: #000;
+            font-size: 15px;
+            font-family: 'Space Grotesk', sans-serif;
+            outline: none;
+        }
+
+        .chat-input::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .chat-input:focus {
+            border-color: #8eff01;
+            box-shadow: 0 0 15px rgba(142, 255, 1, 0.5);
+        }
+
+        .chat-send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #8eff01;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(142, 255, 1, 0.5);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chat-send-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* MATCH POPUP */
+        .match-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--accent), #26c977);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: matchFadeIn 0.3s ease;
+        }
+
+        .match-popup.active {
+            display: flex;
+        }
+
+        @keyframes matchFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .match-content {
+            text-align: center;
+            color: white;
+            padding: 40px;
+        }
+
+        .match-icon {
+            font-size: 120px;
+            margin-bottom: 20px;
+            animation: matchBounce 0.6s ease;
+        }
+
+        @keyframes matchBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .match-title {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            animation: matchSlideUp 0.5s ease;
+        }
+
+        @keyframes matchSlideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .match-subtitle {
+            font-size: 20px;
+            opacity: 0.95;
+            margin-bottom: 32px;
+            animation: matchSlideUp 0.5s ease 0.1s backwards;
+        }
+
+        .match-btn {
+            background: white;
+            color: var(--accent);
+            border: none;
+            padding: 16px 32px;
+            border-radius: 28px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            animation: matchSlideUp 0.5s ease 0.2s backwards;
+            transition: all 0.2s;
+        }
+
+        .match-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .match-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* EMOJI REACTION POPUP */
+        .emoji-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 120px;
+            z-index: 10001;
+            animation: emojiPop 0.8s ease forwards;
+        }
+
+        @keyframes emojiPop {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(0); }
+        }
+
+        /* CONFETTI */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            z-index: 10002;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes badgePop {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* REVIEW MODAL */
+        .review-detail {
+            padding: 20px;
+            background: var(--bg);
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+
+        .emoji-reactions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            justify-content: center;
+        }
+
+        .emoji-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            background: white;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emoji-btn:hover {
+            transform: scale(1.1);
+            border-color: var(--accent);
+        }
+
+        .emoji-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* GIG DETAIL MODAL */
+        .gig-detail-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #1d2333;
+            z-index: 700;
+            display: none;
+            flex-direction: column;
+        }
+
+        .gig-detail-modal.active {
+            display: flex;
+        }
+
+        .gig-detail-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid rgba(142, 255, 1, 0.2);
+            background: #1d2333;
+        }
+
+        .gig-detail-back {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(142, 255, 1, 0.2);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #8eff01;
+        }
+
+        .gig-detail-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #1d2333;
+        }
+
+        .gig-detail-color {
+            width: 100%;
+            height: 200px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .gig-detail-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: white;
+        }
+
+        .gig-detail-company {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 16px;
+        }
+
+        .gig-detail-info {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .gig-detail-badge {
+            background: rgba(142, 255, 1, 0.2);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #8eff01;
+        }
+
+        .gig-detail-description {
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .gig-detail-section {
+            margin-bottom: 20px;
+        }
+
+        .gig-detail-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #8eff01;
+        }
+
+        .gig-detail-apply {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: #1d2333;
+            border-top: 1px solid rgba(142, 255, 1, 0.2);
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .gig-apply-btn {
+            flex: 1;
+            max-width: 200px;
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 16px;
+            border-radius: 28px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .gig-apply-btn.like {
+            background: #8eff01;
+            color: #000;
+            border-color: #8eff01;
+            box-shadow: 0 0 20px rgba(142, 255, 1, 0.4);
+        }
+
+        .gig-apply-btn.nope {
+            background: transparent;
+            color: #FF4444;
+            border-color: #FF4444;
+        }
+
+        .gig-apply-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* IMAGE CAROUSEL */
+        .carousel {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .carousel-track {
+            display: flex;
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            height: 100%;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .carousel-nav {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+
+        .carousel-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .carousel-dot.active {
+            background: white;
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .carousel-arrow.left {
+            left: 12px;
+        }
+
+        .carousel-arrow.right {
+            right: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="content">
+            <!-- Dashboard View -->
+            <div class="view active" id="dashboardView">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px 0;">
+                    <img src="getto-logo.png" class="logo" alt="GETTO">
+                    <div style="display: flex; gap: 12px;">
+                        <button class="icon-btn" onclick="openNotifications()">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                            </svg>
+                            <div class="notification-dot"></div>
+                        </button>
+                        <button class="icon-btn" onclick="openSettings()">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="welcome-section">
+                    <div class="welcome-title">Hei, Mikko! 👋</div>
+                    <div class="welcome-subtitle">Sinulla on 3 uutta matchit</div>
+                </div>
+
+                <div class="bento-grid">
+                    <div class="bento-card" style="background: #1d2333; color: white;">
+                        <div class="card-label" style="color: white;">Keikkoja tehty</div>
+                        <div class="card-stat" style="color: white;">47</div>
+                        <div class="card-stat-label" style="color: white;">Tänä vuonna</div>
+                        <canvas id="gigsChart" style="margin-top: 12px; max-height: 80px;"></canvas>
+                    </div>
+
+                    <div class="bento-card" style="background: #8b53fe; color: white;">
+                        <div class="card-label" style="color: white;">Arvostelut</div>
+                        <div class="card-stat" style="color: white;">4.8 ⭐</div>
+                        <div class="card-stat-label" style="color: white;">12 arvostelua</div>
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2);">
+                            <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px; color: white;">Viimeisin:</div>
+                            <div style="font-size: 12px; opacity: 0.9; line-height: 1.3; color: white;">"Loistava videokuvaaja!"</div>
+                            <div style="font-size: 10px; opacity: 0.7; margin-top: 4px; color: white;">- Ravintola Pastis</div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card large" style="background: white; color: var(--text);">
+                        <div class="card-label" style="color: var(--text);">Tienattu</div>
+                        <div class="card-stat" style="color: var(--text);">2,450€</div>
+                        <div class="card-stat-label" style="color: var(--text);">Tässä kuussa</div>
+                        <canvas id="earningsChart" style="margin-top: 12px; max-height: 80px;"></canvas>
+                    </div>
+
+                    <div class="bento-card tall" style="background: rgba(29, 35, 51, 0.4); color: white; backdrop-filter: blur(10px);">
+                        <div class="card-label" style="color: white;">Matchit</div>
+                        <div class="card-stat" style="font-size: 32px; color: white;">12</div>
+                        <div class="card-stat-label" style="color: white;">Aktiivisia</div>
+                        <div style="margin-top: 16px;">
+                            <div class="activity-list">
+                                <div class="activity-item">
+                                    <div class="activity-dot" style="background: #8eff01;"></div>
+                                    <div style="font-size: 13px; color: white;">Ravintola Pastis</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-dot" style="background: #8eff01;"></div>
+                                    <div style="font-size: 13px; color: white;">TechHub Oy</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-dot" style="background: #8eff01;"></div>
+                                    <div style="font-size: 13px; color: white;">GreenTech Solutions</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card">
+                        <div class="card-label">Badget</div>
+                        <div class="card-stat" style="font-size: 32px;">6</div>
+                        <div class="card-stat-label">Ansaittuja</div>
+                        <div style="margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                            <div class="badge-icon" data-badge="Verified" onclick="celebrateBadge(this, '✓')">✓</div>
+                            <div class="badge-icon" data-badge="10 Matchit" onclick="celebrateBadge(this, '🔥')">🔥</div>
+                            <div class="badge-icon" data-badge="Video Pro" onclick="celebrateBadge(this, '📹')">📹</div>
+                            <div class="badge-icon" data-badge="5 Tähteä" onclick="celebrateBadge(this, '⭐')">⭐</div>
+                            <div class="badge-icon" data-badge="Early Adopter" onclick="celebrateBadge(this, '🚀')">🚀</div>
+                            <div class="badge-icon" data-badge="Top Performer" onclick="celebrateBadge(this, '👑')">👑</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Swipe View -->
+            <div class="swipe-view" id="swipeView">
+                <div class="card-stack" id="cardStack"></div>
+                <div class="distance-badge" onclick="openFilter();">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                        <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+                    </svg>
+                    Suodata
+                </div>
+            </div>
+
+            <!-- Matches View -->
+            <div class="view" id="matchesView">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px 0;">
+                    <img src="getto-logo.png" class="logo" alt="GETTO">
+                    <div style="display: flex; gap: 12px;">
+                        <button class="icon-btn" onclick="openNotifications()">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                            </svg>
+                            <div class="notification-dot"></div>
+                        </button>
+                        <button class="icon-btn" onclick="openSettings()">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="welcome-section">
+                    <div class="welcome-title">Matchit 💬</div>
+                    <div class="welcome-subtitle">12 aktiivista keskustelua</div>
+                </div>
+
+                <div class="bento-grid">
+                    <div class="bento-card large" style="background: #8eff01; color: var(--text);">
+                        <div class="card-label" style="color: var(--text);">Matchit viikolla</div>
+                        <canvas id="matchesChart" style="margin-top: 12px; max-height: 120px;"></canvas>
+                    </div>
+
+                    <div class="bento-card large" style="background: white; color: var(--primary); border: 2px solid var(--bg);">
+                        <div class="card-label" style="color: var(--text-light);">Viimeisimmät viestit</div>
+                        <div class="activity-list" style="margin-top: 12px;">
+                            <div class="activity-item" style="cursor: pointer; padding: 12px; background: var(--bg); border-radius: 12px; margin-bottom: 8px;" onclick="openChat('Videokuvaus - Pastis')">
+                                <div class="activity-dot"></div>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--primary);">Videokuvaus - Pastis</div>
+                                    <div style="font-size: 12px; opacity: 0.7; margin-top: 2px; color: var(--text);">Sovitaan perjantaille klo 14!</div>
+                                </div>
+                            </div>
+                            <div class="activity-item" style="cursor: pointer; padding: 12px; background: var(--bg); border-radius: 12px;" onclick="openChat('DJ-keikka')">
+                                <div class="activity-dot"></div>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--primary);">DJ-keikka</div>
+                                    <div style="font-size: 12px; opacity: 0.7; margin-top: 2px; color: var(--text);">Omat laitteet mukaan 👍</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card" style="padding: 12px; cursor: pointer; background: white;" onclick="openGigDetailById(1)">
+                        <img src="1.avif" style="width: 100%; height: 60px; object-fit: cover; border-radius: 12px; margin-bottom: 8px;">
+                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; line-height: 1.2;">Videokuvaus - Ravintola Pastis</div>
+                        <div style="font-size: 11px; color: var(--text-light); margin-bottom: 2px;">Ravintola Pastis</div>
+                        <div style="font-size: 11px; color: var(--text-light); margin-bottom: 4px;">15.6.2024</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--accent);">450€</div>
+                    </div>
+                    <div class="bento-card" style="padding: 12px; cursor: pointer; background: white;" onclick="openGigDetailById(3)">
+                        <img src="3.avif" style="width: 100%; height: 60px; object-fit: cover; border-radius: 12px; margin-bottom: 8px;">
+                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; line-height: 1.2;">Siivous - TechHub Oy</div>
+                        <div style="font-size: 11px; color: var(--text-light); margin-bottom: 2px;">TechHub Oy</div>
+                        <div style="font-size: 11px; color: var(--text-light); margin-bottom: 4px;">18.6.2024</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--accent);">380€</div>
+                    </div>
+                    <div class="bento-card" style="padding: 12px; cursor: pointer; background: white;" onclick="openGigDetailById(5)">
+                        <img src="5.avif" style="width: 100%; height: 60px; object-fit: cover; border-radius: 12px; margin-bottom: 8px;">
+                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; line-height: 1.2;">Koodaus - Startup MVP</div>
+                        <div style="font-size: 11px; color: var(--text-light); margin-bottom: 2px;">GreenTech Solutions</div>
+                        <div style="font-size: 11px; color: var(--text-light); margin-bottom: 4px;">20.6.2024</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--accent);">2,400€</div>
+                    </div>
+                    <div class="bento-card" style="padding: 12px; cursor: pointer; background: white;" onclick="openGigDetailById(7)">
+                        <img src="7.avif" style="width: 100%; height: 60px; object-fit: cover; border-radius: 12px; margin-bottom: 8px;">
+                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; line-height: 1.2;">Muutto - 2h Pakkausta</div>
+                        <div style="font-size: 11px; color: var(--text-light); margin-bottom: 2px;">MuuttoApuri Oy</div>
+                        <div style="font-size: 11px; color: var(--text-light); margin-bottom: 4px;">22.6.2024</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--accent);">80€</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile View -->
+            <div class="view" id="profileView">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px 0;">
+                    <img src="getto-logo.png" class="logo" alt="GETTO">
+                    <div style="display: flex; gap: 12px;">
+                        <button class="icon-btn" onclick="openNotifications()">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                            </svg>
+                            <div class="notification-dot"></div>
+                        </button>
+                        <button class="icon-btn" onclick="openSettings()">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="welcome-section">
+                    <div class="welcome-title">Mikko Virtanen 👨‍💻</div>
+                    <div class="welcome-subtitle">Helsinki</div>
+                </div>
+
+                <div class="bento-grid">
+                    <div class="bento-card" style="background: #8eff01; color: #1d2333;">
+                        <div class="card-label" style="color: #1d2333;">Profiili täydellisyys</div>
+                        <div class="card-stat" style="color: #1d2333;">85%</div>
+                        <div class="card-stat-label" style="color: #1d2333;">Melkein valmis!</div>
+                    </div>
+
+                    <div class="bento-card" style="background: #1d2333; color: white;">
+                        <div class="card-label" style="color: white;">Aktiivisuus</div>
+                        <div class="card-stat" style="color: white;">12 pv</div>
+                        <div class="card-stat-label" style="color: white;">Putkeen 🔥</div>
+                    </div>
+
+                    <div class="bento-card large" style="background: #8b53fe; color: white;">
+                        <div class="card-label" style="color: white;">Taidot & Badget</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
+                            <div class="skill-badge" style="background: rgba(255,255,255,0.2); color: white;">📹 Video</div>
+                            <div class="skill-badge" style="background: rgba(255,255,255,0.2); color: white;">🎵 DJ</div>
+                            <div class="skill-badge" style="background: rgba(255,255,255,0.2); color: white;">💻 Koodaus</div>
+                            <div class="skill-badge" style="background: rgba(255,255,255,0.2); color: white;">📸 Valokuvaus</div>
+                            <div class="skill-badge" style="background: rgba(255,255,255,0.2); color: white;">🧹 Siivous</div>
+                            <div class="skill-badge" style="background: #8eff01; color: #000;">✓ Verified</div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card large" style="background: white;">
+                        <div class="card-label" style="color: #1d2333;">Viimeisimmät arvostelut</div>
+                        <div class="activity-list" style="margin-top: 12px;">
+                            <div style="background: #f5f5f5; padding: 12px; border-radius: 12px; margin-bottom: 8px; cursor: pointer;" onclick="openReview('Ravintola Pastis', '⭐⭐⭐⭐⭐', 'Loistava videokuvaaja, ammattitaitoinen!')">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="font-weight: 600; font-size: 13px; color: #1d2333;">Ravintola Pastis</span>
+                                    <span style="color: #8eff01; font-size: 13px;">⭐⭐⭐⭐⭐</span>
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-light);">"Loistava videokuvaaja, ammattitaitoinen!"</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.02); padding: 12px; border-radius: 12px; cursor: pointer;" onclick="openReview('TechHub Oy', '⭐⭐⭐⭐⭐', 'Nopea ja huolellinen työ!')">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="font-weight: 600; font-size: 13px;">TechHub Oy</span>
+                                    <span style="color: var(--accent); font-size: 13px;">⭐⭐⭐⭐⭐</span>
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-light);">"Nopea ja huolellinen työ!"</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bento-card" style="background: rgba(29, 35, 51, 0.4); color: white; backdrop-filter: blur(10px);">
+                        <div class="card-label" style="color: white;">Asetukset</div>
+                        <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+                            <button style="background: #8eff01; color: #000; border: none; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; box-shadow: 0 0 15px rgba(142, 255, 1, 0.3);">Muokkaa profiilia</button>
+                            <button style="background: #8eff01; color: #000; border: none; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; box-shadow: 0 0 15px rgba(142, 255, 1, 0.3);">Tili & turvallisuus</button>
+                        </div>
+                    </div>
+
+                    <div class="bento-card">
+                        <div class="card-label">Portfolio</div>
+                        <div class="card-stat" style="font-size: 32px;">18</div>
+                        <div class="card-stat-label">Töitä esillä</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="actions" id="actions">
+            <button class="action-btn nope" id="nopeBtn">
+                <svg viewBox="0 0 24 24" fill="white">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+            <button class="action-btn like" id="likeBtn">
+                <svg viewBox="0 0 24 24" fill="#000">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- NAVIGAATIO - AINA NÄKYVISSÄ -->
+        <div class="bottom-nav">
+            <button class="nav-btn active" onclick="switchView('dashboardView')">
+                <svg viewBox="0 0 24 24">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+            </button>
+            <button class="nav-btn" onclick="switchView('swipeView')">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+            </button>
+            <button class="nav-btn" onclick="switchView('matchesView')">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                </svg>
+                <div class="nav-badge"></div>
+            </button>
+            <button class="nav-btn" onclick="switchView('profileView')">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- MODALS -->
+        <div class="modal-overlay" id="notificationsModal" onclick="if(event.target === this) closeNotifications()">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Ilmoitukset</div>
+                    <button class="modal-close" onclick="closeNotifications()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">🎉 Uusi match!</div>
+                    <div class="notification-text">Siivous - TechHub matchasi kanssasi</div>
+                    <div class="notification-time">2 tuntia sitten</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">💬 Uusi viesti</div>
+                    <div class="notification-text">Ravintola Pastis: "Sovitaan perjantaille klo 14!"</div>
+                    <div class="notification-time">5 tuntia sitten</div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-title">⭐ Uusi arvostelu</div>
+                    <div class="notification-text">Sait 5 tähteä TechHub Oy:ltä</div>
+                    <div class="notification-time">Eilen</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="settingsModal" onclick="if(event.target === this) closeSettings()">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Asetukset</div>
+                    <button class="modal-close" onclick="closeSettings()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="settings-item">
+                    <span>Ilmoitukset</span>
+                    <span style="color: var(--accent); font-weight: 600;">Päällä</span>
+                </div>
+                <div class="settings-item">
+                    <span>Sijainti</span>
+                    <span style="color: var(--text-light);">Helsinki</span>
+                </div>
+                <div class="settings-item">
+                    <span>Haku säde</span>
+                    <span style="color: var(--text-light);">10 km</span>
+                </div>
+                <div class="settings-item">
+                    <span>Tili & turvallisuus</span>
+                    <span>→</span>
+                </div>
+                <div class="settings-item">
+                    <span>Tietosuoja</span>
+                    <span>→</span>
+                </div>
+                <div class="settings-item">
+                    <span style="color: #FF6B9D;">Kirjaudu ulos</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="reviewModal" onclick="if(event.target === this) closeReview()">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Arvostelu</div>
+                    <button class="modal-close" onclick="closeReview()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="review-detail">
+                    <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;" id="reviewCompany">Ravintola Pastis</div>
+                    <div style="font-size: 20px; margin-bottom: 12px;" id="reviewStars">⭐⭐⭐⭐⭐</div>
+                    <div style="font-size: 15px; line-height: 1.5;" id="reviewText">"Loistava videokuvaaja, ammattitaitoinen!"</div>
+                    
+                    <div class="emoji-reactions">
+                        <button class="emoji-btn" onclick="showEmojiReaction('😢')">😢</button>
+                        <button class="emoji-btn" onclick="showEmojiReaction('❤️')">❤️</button>
+                        <button class="emoji-btn" onclick="showEmojiReaction('🎉')">🎉</button>
+                        <button class="emoji-btn" onclick="showEmojiReaction('👍')">👍</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="filterModal" onclick="if(event.target === this) closeFilter()">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Suodata keikkoja</div>
+                    <button class="modal-close" onclick="closeFilter()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="filter-option active">
+                    <span>🌟</span>
+                    <span>Kaikki keikat</span>
+                </div>
+                <div class="filter-option">
+                    <span>📹</span>
+                    <span>Video & valokuvaus</span>
+                </div>
+                <div class="filter-option">
+                    <span>🎵</span>
+                    <span>DJ & musiikki</span>
+                </div>
+                <div class="filter-option">
+                    <span>💻</span>
+                    <span>Koodaus & IT</span>
+                </div>
+                <div class="filter-option">
+                    <span>🧹</span>
+                    <span>Siivous</span>
+                </div>
+                <div class="filter-option">
+                    <span>📦</span>
+                    <span>Muutto & kuljetus</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-modal" id="chatModal">
+            <div class="chat-header">
+                <button class="chat-back-btn" onclick="closeChat()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                </button>
+                <div class="chat-name" id="chatName">Videokuvaus - Pastis</div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message received">
+                    <div>Hei! Kiinnostuitko videokuvauskeikasta?</div>
+                    <div class="message-time">Eilen 18:34</div>
+                </div>
+                <div class="message sent">
+                    <div>Kyllä! Kuulostaa mielenkiintoiselta. Mitä haluaisitte kuvattavan?</div>
+                    <div class="message-time">Eilen 18:42</div>
+                </div>
+                <div class="message received">
+                    <div>Ravintolan uusi menu. Haluamme modernin lookin videoita somekanaviin.</div>
+                    <div class="message-time">Eilen 19:15</div>
+                </div>
+                <div class="message sent">
+                    <div>Selvä! Sovitaan perjantaille klo 14?</div>
+                    <div class="message-time">Tänään 09:12</div>
+                </div>
+                <div class="message received">
+                    <div>Sovitaan perjantaille klo 14! 👍</div>
+                    <div class="message-time">Tänään 09:18</div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" placeholder="Kirjoita viesti..." id="chatInput">
+                <button class="chat-send-btn" onclick="sendMessage()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- GIG DETAIL MODAL -->
+        <div class="gig-detail-modal" id="gigDetailModal">
+            <div class="gig-detail-header">
+                <button class="gig-detail-back" onclick="closeGigDetail()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                </button>
+                <div style="font-size: 18px; font-weight: 600; color: white;">Keikan tiedot</div>
+            </div>
+            <div class="gig-detail-content" id="gigDetailContent">
+                <!-- Content loaded dynamically -->
+            </div>
+            <div class="gig-detail-apply">
+                <button class="gig-apply-btn nope" onclick="closeGigDetail()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+                <button class="gig-apply-btn like" onclick="alert('Tykkäys lähetetty! ❤️'); closeGigDetail();">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BADGE CELEBRATION OVERLAY -->
+    <div id="badgeCelebration" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+        <div id="badgeText" style="font-size: 80px; font-weight: 900; color: #8eff01; text-shadow: 0 0 40px rgba(142,255,1,0.8); font-family: 'Space Grotesk', sans-serif; animation: badgePop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);"></div>
+    </div>
+
+    <!-- MATCH POPUP -->
+    <div class="match-popup" id="matchPopup">
+        <div class="match-content">
+            <div class="match-icon">🎉</div>
+            <div class="match-title">MATCH!</div>
+            <div class="match-subtitle" id="matchName">Videokuvaus - Ravintola Pastis</div>
+            <button class="match-btn" onclick="closeMatch()">Jatka selausta</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // GIGS DATA
+        const gigs = [
+            {
+                id: 1,
+                title: 'Videokuvaus - Ravintola Pastis',
+                company: 'Ravintola Pastis',
+                location: 'Kamppi, Helsinki',
+                type: '📹 Video',
+                match: '95%',
+                hasMatch: true,
+                description: 'Tarvitsemme ammattimaisen videokuvaajan ravintolan uuden menun esittelyyn. Kuvaukset toteutetaan lauantaina 15.6.',
+                interests: ['🎥 Videokuvaus', '🍝 Ruoka', '📱 SoMe'],
+                color: '#FF6B9D',
+                image: '1.avif'
+            },
+            {
+                id: 2,
+                title: 'DJ-keikka - Yksityisjuhlat',
+                company: 'Privé Events',
+                location: 'Töölö, Helsinki',
+                type: '🎵 DJ',
+                match: '88%',
+                hasMatch: false,
+                description: 'Etsimme DJ:tä yksityisjuhliin perjantaille 21.6. Musiikkityyli: House, Disco.',
+                interests: ['🎧 DJ', '🎉 Juhlat', '🏠 House'],
+                color: '#6C63FF',
+                image: '2.avif'
+            },
+            {
+                id: 3,
+                title: 'Siivous - TechHub Oy',
+                company: 'TechHub Oy',
+                location: 'Katajanokka, Helsinki',
+                type: '🧹 Siivous',
+                match: '92%',
+                hasMatch: true,
+                description: 'Toimistosiivous keskiviikkoisin klo 17-20. Vakituinen keikka.',
+                interests: ['🧹 Siivous', '🏢 Toimisto', '💼 Vakituinen'],
+                color: '#81C784',
+                image: '3.avif'
+            },
+            {
+                id: 4,
+                title: 'Valokuvaus - Muotinäytös',
+                company: 'Helsinki Fashion Week',
+                location: 'Kaapelitehdas, Helsinki',
+                type: '📸 Valokuvaus',
+                match: '90%',
+                hasMatch: false,
+                description: 'Muotinäytöksen valokuvaus 28.6. Portfolio vaaditaan.',
+                interests: ['📸 Valokuvaus', '👗 Muoti', '🎨 Taide'],
+                color: '#FFD600',
+                image: '4.avif'
+            },
+            {
+                id: 5,
+                title: 'Koodaus - Startup MVP',
+                company: 'GreenTech Solutions',
+                location: 'Remote / Helsinki',
+                type: '💻 Koodaus',
+                match: '85%',
+                hasMatch: true,
+                description: 'React-kehittäjä MVP:n rakentamiseen. 2-3 viikkoa.',
+                interests: ['💻 React', '🚀 Startup', '🌱 GreenTech'],
+                color: '#64B5F6',
+                image: '5.avif'
+            },
+            {
+                id: 6,
+                title: 'Graafinen suunnittelu - Logo',
+                company: 'Nordic Brands',
+                location: 'Kallio, Helsinki',
+                type: '🎨 Design',
+                match: '87%',
+                hasMatch: false,
+                description: 'Logon ja brändi-identiteetin suunnittelu uudelle startupille.',
+                interests: ['🎨 Design', '💡 Brändäys', '🖌️ Adobe'],
+                color: '#E91E63',
+                image: '6.avif'
+            },
+            {
+                id: 7,
+                title: 'Muutto - 2h Pakkausta',
+                company: 'MuuttoApuri Oy',
+                location: 'Espoo Keskus',
+                type: '📦 Muutto',
+                match: '78%',
+                hasMatch: true,
+                description: 'Avustus pakkaamisessa ja laatikoiden kantamisessa.',
+                interests: ['📦 Muutto', '💪 Fyysiset', '⏰ Nopea'],
+                color: '#FF9800',
+                image: '7.avif'
+            },
+            {
+                id: 8,
+                title: 'Copywriting - Nettisivut',
+                company: 'Digital Agency Co',
+                location: 'Remote',
+                type: '✍️ Kirjoitus',
+                match: '91%',
+                hasMatch: false,
+                description: 'Tekstien kirjoitus asiakkaan verkkosivuille. SEO-osaaminen plussaa.',
+                interests: ['✍️ Copywriting', '📱 Digitaalinen', '🔍 SEO'],
+                color: '#9C27B0',
+                image: '8.avif'
+            },
+            {
+                id: 9,
+                title: 'Somehallinnointi - Instagram',
+                company: 'FitLife Studios',
+                location: 'Kamppi, Helsinki',
+                type: '📱 SoMe',
+                match: '84%',
+                hasMatch: true,
+                description: 'Instagram-tilin päivittäminen 3x viikossa. Kuvat + captionit.',
+                interests: ['📱 Instagram', '💪 Fitness', '📸 Sisältö'],
+                color: '#00BCD4',
+                image: '9.avif'
+            },
+            {
+                id: 10,
+                title: 'Käännös - Englanti → Suomi',
+                company: 'TranslateNow',
+                location: 'Remote',
+                type: '🌍 Käännös',
+                match: '89%',
+                hasMatch: false,
+                description: 'Teknisten dokumenttien kääntäminen englanniksi.',
+                interests: ['🌍 Käännös', '📄 Tekniikka', '💻 Remote'],
+                color: '#4CAF50',
+                image: '10.avif'
+            },
+            {
+                id: 11,
+                title: 'Tarjoilija - Kesäterassi',
+                company: 'Cafe Engel',
+                location: 'Senaatintori, Helsinki',
+                type: '☕ Tarjoilu',
+                match: '82%',
+                hasMatch: true,
+                description: 'Viikonlopputyöt kesäterassilla. Kokemus eduksi.',
+                interests: ['☕ Tarjoilu', '🌞 Kesä', '👥 Asiakaspalvelu'],
+                color: '#795548',
+                image: '11.avif'
+            },
+            {
+                id: 12,
+                title: 'Tilitoimisto - Kirjanpito',
+                company: 'Talous Pro Oy',
+                location: 'Ruoholahti, Helsinki',
+                type: '💼 Taloushallinto',
+                match: '93%',
+                hasMatch: false,
+                description: 'Laskujen käsittely ja kirjanpito. Procountor-osaaminen.',
+                interests: ['💼 Kirjanpito', '🧮 Numerot', '📊 Excel'],
+                color: '#607D8B',
+                image: '12.avif'
+            },
+            {
+                id: 13,
+                title: 'Henkilökohtainen Valmentaja',
+                company: 'PT Studio',
+                location: 'Töölö, Helsinki',
+                type: '💪 PT',
+                match: '76%',
+                hasMatch: true,
+                description: 'Asiakkaiden valmennusta saleilla 2-3 kertaa viikossa.',
+                interests: ['💪 Treeni', '🏋️ PT', '🎯 Motivointi'],
+                color: '#F44336',
+                image: '1.avif'
+            },
+            {
+                id: 14,
+                title: 'Podcast Editointi',
+                company: 'Voice Media',
+                location: 'Remote',
+                type: '🎙️ Audio',
+                match: '88%',
+                hasMatch: false,
+                description: 'Podcast-jaksojen editointi. Adobe Audition tai vastaava.',
+                interests: ['🎙️ Podcast', '🎧 Audio', '✂️ Editointi'],
+                color: '#3F51B5',
+                image: '2.avif'
+            },
+            {
+                id: 15,
+                title: 'Koiran Ulkoilutus',
+                company: 'DogWalkers Helsinki',
+                location: 'Eri alueet, Helsinki',
+                type: '🐕 Lemmikki',
+                match: '80%',
+                hasMatch: true,
+                description: 'Koirien ulkoiluttamista arkipäivisin 1-2h kerrallaan.',
+                interests: ['🐕 Koirat', '🌳 Ulkoilu', '❤️ Eläimet'],
+                color: '#CDDC39',
+                image: '3.avif'
+            }
+        ];
+
+        let currentIndex = 0;
+        let matchedGigs = []; // Tallentaa matchatut keikat
+
+        // SWIPE LOGIC
+        function createCard(gig, index) {
+            const card = document.createElement('div');
+            card.className = 'gig-card';
+            card.innerHTML = `
+                <div class="swipe-indicator left">NOPE</div>
+                <div class="swipe-indicator right">LIKE</div>
+                <img src="${gig.image}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;">
+                ${gig.match ? `<div class="match-badge">🔥 ${gig.match}</div>` : ''}
+                <div class="card-info">
+                    <div class="card-title">
+                        ${gig.title}
+                        <svg class="verified-icon" viewBox="0 0 24 24" fill="#FFD600">
+                            <path d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.69 3.61.82 1.89 3.2L12 21.03l3.4 1.46 1.89-3.2 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/>
+                        </svg>
+                    </div>
+                    <div class="card-location">${gig.company} • ${gig.location}</div>
+                    <div class="card-description">${gig.description}</div>
+                    <div class="card-tags">
+                        ${gig.interests.map(interest => `<div class="tag">${interest}</div>`).join('')}
+                    </div>
+                </div>
+            `;
+            
+            // Lisätään click-handleri card-infolle
+            const cardInfo = card.querySelector('.card-info');
+            cardInfo.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openGigDetailFromSwipe(index);
+            });
+
+            let startX = 0;
+            let currentX = 0;
+            let isDragging = false;
+
+            const handleStart = (e) => {
+                isDragging = true;
+                startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                card.style.transition = 'none';
+            };
+
+            const handleMove = (e) => {
+                if (!isDragging) return;
+                currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                const diff = currentX - startX;
+                const rotation = diff / 20;
+                
+                card.style.transform = `translateX(${diff}px) rotate(${rotation}deg)`;
+                
+                const leftIndicator = card.querySelector('.swipe-indicator.left');
+                const rightIndicator = card.querySelector('.swipe-indicator.right');
+                
+                if (diff < -50) {
+                    const progress = Math.min(Math.abs(diff) / 200, 1);
+                    leftIndicator.style.opacity = progress;
+                    leftIndicator.style.fontSize = `${48 + progress * 32}px`;
+                    rightIndicator.style.opacity = 0;
+                } else if (diff > 50) {
+                    const progress = Math.min(diff / 200, 1);
+                    rightIndicator.style.opacity = progress;
+                    rightIndicator.style.fontSize = `${48 + progress * 32}px`;
+                    leftIndicator.style.opacity = 0;
+                } else {
+                    leftIndicator.style.opacity = 0;
+                    leftIndicator.style.fontSize = '48px';
+                    rightIndicator.style.opacity = 0;
+                    rightIndicator.style.fontSize = '48px';
+                }
+            };
+
+            const handleEnd = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                const diff = currentX - startX;
+                card.style.transition = 'transform 0.3s ease';
+                
+                if (Math.abs(diff) > 100) {
+                    const direction = diff > 0 ? 'right' : 'left';
+                    swipe(direction, card);
+                } else {
+                    card.style.transform = '';
+                    card.querySelector('.swipe-indicator.left').style.opacity = 0;
+                    card.querySelector('.swipe-indicator.right').style.opacity = 0;
+                }
+            };
+
+            card.addEventListener('mousedown', handleStart);
+            card.addEventListener('mousemove', handleMove);
+            card.addEventListener('mouseup', handleEnd);
+            card.addEventListener('mouseleave', handleEnd);
+            
+            card.addEventListener('touchstart', handleStart);
+            card.addEventListener('touchmove', handleMove);
+            card.addEventListener('touchend', handleEnd);
+
+            return card;
+        }
+
+        function swipe(direction, card) {
+            const moveX = direction === 'right' ? 1000 : -1000;
+            card.style.transform = `translateX(${moveX}px) rotate(${moveX / 20}deg)`;
+            
+            setTimeout(() => {
+                card.remove();
+                
+                // Tarkista match vain jos tykkäsit (right swipe)
+                if (direction === 'right') {
+                    const gigIndex = parseInt(card.dataset.index);
+                    const gig = gigs[gigIndex];
+                    
+                    // Match syntyy vain jos työnantaja on jo valinnut sinut JA ei ole vielä matchattu
+                    if (gig && gig.hasMatch && !matchedGigs.find(m => m.id === gig.id)) {
+                        matchedGigs.push(gig);
+                        showMatch(gig.title);
+                        updateMatchedGigsList();
+                    }
+                }
+                
+                currentIndex++;
+                if (currentIndex < gigs.length) {
+                    loadCards();
+                }
+            }, 300);
+        }
+
+        function showMatch(gigTitle) {
+            document.getElementById('matchName').textContent = gigTitle;
+            document.getElementById('matchPopup').classList.add('active');
+        }
+
+        function closeMatch() {
+            document.getElementById('matchPopup').classList.remove('active');
+        }
+
+        function updateMatchedGigsList() {
+            const container = document.getElementById('matchedGigsList');
+            if (!container) return;
+            
+            container.innerHTML = matchedGigs.map(gig => `
+                <div class="bento-card" style="padding: 12px; cursor: pointer; background: white;" onclick="openGigDetail(${gig.id})">
+                    <div style="width: 100%; height: 80px; background: ${gig.color}; border-radius: 12px; margin-bottom: 8px;"></div>
+                    <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; line-height: 1.2;">${gig.title}</div>
+                    <div style="font-size: 11px; color: var(--text-light); margin-bottom: 4px;">15.6.2024</div>
+                    <div style="font-size: 13px; font-weight: 600; color: var(--accent);">450€</div>
+                </div>
+            `).join('');
+        }
+
+        function openGigDetail(gigId) {
+            const gig = matchedGigs.find(g => g.id === gigId);
+            if (!gig) return;
+            
+            alert(`${gig.title}\n\n${gig.description}\n\nSijainti: ${gig.location}\nHinta: 450€`);
+        }
+
+        function loadCards() {
+            const stack = document.getElementById('cardStack');
+            
+            // Tarkista onko keikkoja jäljellä
+            if (currentIndex >= gigs.length) {
+                stack.innerHTML = `
+                    <div style="height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px; color: white; background: linear-gradient(135deg, var(--accent-nav), var(--accent));">
+                        <div>
+                            <div style="font-size: 80px; margin-bottom: 20px;">😔</div>
+                            <div style="font-size: 24px; font-weight: 700; margin-bottom: 12px;">Ei uusia keikkoja</div>
+                            <div style="font-size: 16px; opacity: 0.9;">Alueellasi ei ole juuri nyt tarjolla olevia keikkoja. Tule takaisin myöhemmin!</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const cardsToLoad = Math.min(3, gigs.length - currentIndex);
+            
+            for (let i = 0; i < cardsToLoad; i++) {
+                if (currentIndex + i >= gigs.length) break;
+                
+                const existingCard = stack.querySelector(`[data-index="${currentIndex + i}"]`);
+                if (existingCard) continue;
+                
+                const gig = gigs[currentIndex + i];
+                const card = createCard(gig, currentIndex + i);
+                card.dataset.index = currentIndex + i;
+                stack.appendChild(card);
+            }
+        }
+
+        // ACTION BUTTONS
+        document.getElementById('likeBtn').onclick = () => {
+            const card = document.querySelector('.gig-card');
+            const likeBtn = document.getElementById('likeBtn');
+            const indicator = card?.querySelector('.swipe-indicator.right');
+            
+            // Pomppaa nappi
+            likeBtn.classList.add('bounce');
+            setTimeout(() => likeBtn.classList.remove('bounce'), 400);
+            
+            // Pomppaa LIKE teksti
+            if (indicator) {
+                indicator.classList.add('bounce');
+                indicator.style.opacity = '1';
+                setTimeout(() => {
+                    indicator.classList.remove('bounce');
+                    indicator.style.opacity = '0';
+                }, 500);
+            }
+            
+            // Triggeröi swipe
+            if (card) {
+                setTimeout(() => swipe('right', card), 200);
+            }
+        };
+
+        document.getElementById('nopeBtn').onclick = () => {
+            const card = document.querySelector('.gig-card');
+            const nopeBtn = document.getElementById('nopeBtn');
+            const indicator = card?.querySelector('.swipe-indicator.left');
+            
+            // Pomppaa nappi
+            nopeBtn.classList.add('bounce');
+            setTimeout(() => nopeBtn.classList.remove('bounce'), 400);
+            
+            // Pomppaa NOPE teksti
+            if (indicator) {
+                indicator.classList.add('bounce');
+                indicator.style.opacity = '1';
+                setTimeout(() => {
+                    indicator.classList.remove('bounce');
+                    indicator.style.opacity = '0';
+                }, 500);
+            }
+            
+            // Triggeröi swipe
+            if (card) {
+                setTimeout(() => swipe('left', card), 200);
+            }
+        };
+
+        // MODALS
+        function openNotifications() {
+            document.getElementById('notificationsModal').classList.add('active');
+        }
+
+        function closeNotifications() {
+            document.getElementById('notificationsModal').classList.remove('active');
+        }
+
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        function openFilter() {
+            document.getElementById('filterModal').classList.add('active');
+        }
+
+        function closeFilter() {
+            document.getElementById('filterModal').classList.remove('active');
+        }
+
+        function openReview(company, stars, text) {
+            document.getElementById('reviewCompany').textContent = company;
+            document.getElementById('reviewStars').textContent = stars;
+            document.getElementById('reviewText').textContent = `"${text}"`;
+            document.getElementById('reviewModal').classList.add('active');
+        }
+
+        function closeReview() {
+            document.getElementById('reviewModal').classList.remove('active');
+        }
+
+        function openChat(name) {
+            document.getElementById('chatName').textContent = name;
+            document.getElementById('chatModal').classList.add('active');
+        }
+
+        function closeChat() {
+            document.getElementById('chatModal').classList.remove('active');
+        }
+
+        function openGigDetailFromSwipe(index) {
+            const gig = gigs[index];
+            if (!gig) return;
+            showGigDetail(gig);
+        }
+
+        function openGigDetailById(gigId) {
+            const gig = gigs.find(g => g.id === gigId);
+            if (!gig) return;
+            showGigDetail(gig);
+        }
+
+        function showGigDetail(gig) {
+            const content = document.getElementById('gigDetailContent');
+            
+            // Kolme kuvaa karuselliin (pääkuva + 2 seuraavaa)
+            const imageNumber = parseInt(gig.image.replace('.avif', ''));
+            const image1 = gig.image;
+            const image2 = ((imageNumber % 12) + 1) + '.avif';
+            const image3 = (((imageNumber + 1) % 12) + 1) + '.avif';
+            
+            content.innerHTML = `
+                <div class="carousel">
+                    <div class="carousel-track" id="carouselTrack">
+                        <div class="carousel-slide"><img src="${image1}" alt="${gig.title}"></div>
+                        <div class="carousel-slide"><img src="${image2}" alt="${gig.title}"></div>
+                        <div class="carousel-slide"><img src="${image3}" alt="${gig.title}"></div>
+                    </div>
+                    <button class="carousel-arrow left" onclick="moveCarousel(-1)">‹</button>
+                    <button class="carousel-arrow right" onclick="moveCarousel(1)">›</button>
+                    <div class="carousel-nav">
+                        <div class="carousel-dot active" onclick="goToSlide(0)"></div>
+                        <div class="carousel-dot" onclick="goToSlide(1)"></div>
+                        <div class="carousel-dot" onclick="goToSlide(2)"></div>
+                    </div>
+                </div>
+                <div class="gig-detail-title">${gig.title}</div>
+                <div class="gig-detail-company">${gig.company} • ${gig.location}</div>
+                <div class="gig-detail-info">
+                    <div class="gig-detail-badge">${gig.type}</div>
+                    ${gig.match ? `<div class="gig-detail-badge" style="background: var(--accent); color: white;">🔥 ${gig.match}</div>` : ''}
+                </div>
+                <div class="gig-detail-section">
+                    <div class="gig-detail-section-title">KUVAUS</div>
+                    <div class="gig-detail-description">${gig.description}</div>
+                </div>
+                <div class="gig-detail-section">
+                    <div class="gig-detail-section-title">TAIDOT</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        ${gig.interests.map(interest => `<div class="gig-detail-badge">${interest}</div>`).join('')}
+                    </div>
+                </div>
+                <div class="gig-detail-section">
+                    <div class="gig-detail-section-title">PALKKIO</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #8eff01;">450€</div>
+                </div>
+                <div class="gig-detail-section">
+                    <div class="gig-detail-section-title">PÄIVÄMÄÄRÄ</div>
+                    <div style="font-size: 16px; font-weight: 600; color: white;">15.6.2024</div>
+                </div>
+            `;
+            
+            // Alusta karuselli
+            window.currentSlide = 0;
+            
+            document.getElementById('gigDetailModal').classList.add('active');
+        }
+
+        let currentSlide = 0;
+
+        function moveCarousel(direction) {
+            currentSlide = (currentSlide + direction + 3) % 3;
+            updateCarousel();
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateCarousel();
+        }
+
+        function updateCarousel() {
+            const track = document.getElementById('carouselTrack');
+            const dots = document.querySelectorAll('.carousel-dot');
+            
+            if (track) {
+                track.style.transform = `translateX(-${currentSlide * 100}%)`;
+            }
+            
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+        }
+
+        function closeGigDetail() {
+            document.getElementById('gigDetailModal').classList.remove('active');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                const messagesContainer = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message sent';
+                
+                const now = new Date();
+                const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                messageDiv.innerHTML = `
+                    <div>${message}</div>
+                    <div class="message-time">Tänään ${time}</div>
+                `;
+                
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                input.value = '';
+            }
+        }
+
+        // EMOJI REACTIONS
+        function showEmojiReaction(emoji) {
+            const popup = document.createElement('div');
+            popup.className = 'emoji-popup';
+            popup.textContent = emoji;
+            document.body.appendChild(popup);
+            
+            setTimeout(() => popup.remove(), 800);
+            
+            // Jos juhlaemoji, näytä confetti
+            if (emoji === '🎉') {
+                createConfetti();
+            }
+        }
+
+        function createConfetti() {
+            const colors = ['#2dd885', '#cdbef5', '#FFB6C1', '#A8E6CF', '#FFD600'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.top = '-10px';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 0.3 + 's';
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 30);
+            }
+        }
+
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // NAVIGATION
+        function switchView(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view, .swipe-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // Show selected view
+            document.getElementById(viewId).classList.add('active');
+            
+            // Update nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            // Toggle swipe mode
+            if (viewId === 'swipeView') {
+                document.body.classList.add('swipe-mode');
+                document.getElementById('actions').classList.add('active');
+                loadCards();
+            } else {
+                document.body.classList.remove('swipe-mode');
+                document.getElementById('actions').classList.remove('active');
+            }
+        }
+
+        // INIT
+        console.log('Getto App loaded! Navigaatio should be visible at bottom.');
+
+        // Initialize charts when dashboard is visible
+        function initCharts() {
+            // Gigs chart - line chart with markers and glow
+            const gigsCtx = document.getElementById('gigsChart');
+            if (gigsCtx) {
+                new Chart(gigsCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Tam', 'Hel', 'Maa', 'Huh', 'Tou', 'Kes'],
+                        datasets: [{
+                            data: [3, 7, 5, 9, 6, 11],
+                            borderColor: '#8eff01',
+                            backgroundColor: 'rgba(142, 255, 1, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: '#8eff01',
+                            pointBorderWidth: 0,
+                            pointHoverBackgroundColor: '#8eff01',
+                            pointHoverBorderWidth: 0,
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: 'rgba(142, 255, 1, 0.9)',
+                                titleColor: '#000',
+                                bodyColor: '#000',
+                                padding: 12,
+                                cornerRadius: 8,
+                                displayColors: false,
+                                titleFont: { size: 14, weight: 'bold' },
+                                bodyFont: { size: 13 },
+                                callbacks: {
+                                    label: (context) => `${context.parsed.y} keikkaa`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                display: true,
+                                grid: { display: false },
+                                ticks: { font: { size: 10 }, color: 'rgba(255,255,255,0.7)' }
+                            },
+                            y: { 
+                                display: false,
+                                suggestedMin: 0,
+                                suggestedMax: 13
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                });
+            }
+
+            // Earnings chart - bar chart with glow
+            const earningsCtx = document.getElementById('earningsChart');
+            if (earningsCtx) {
+                new Chart(earningsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Viikko 1', 'Viikko 2', 'Viikko 3', 'Viikko 4'],
+                        datasets: [{
+                            data: [450, 680, 520, 800],
+                            backgroundColor: '#8eff01',
+                            borderRadius: 8,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#8eff01',
+                                titleColor: '#000',
+                                bodyColor: '#000',
+                                padding: 12,
+                                cornerRadius: 8,
+                                displayColors: false,
+                                callbacks: {
+                                    label: (context) => `${context.parsed.y}€`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                display: true,
+                                grid: { display: false },
+                                ticks: { font: { size: 10 }, color: 'var(--text)' }
+                            },
+                            y: { display: false }
+                        }
+                    },
+                    plugins: [{
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, i) => {
+                                const meta = chart.getDatasetMeta(i);
+                                meta.data.forEach((bar, index) => {
+                                    const data = dataset.data[index];
+                                    ctx.fillStyle = '#1d233l';
+                                    ctx.font = 'bold 11px Space Grotesk';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(`${data}€`, bar.x, bar.y + 12);
+                                });
+                            });
+                        }
+                    }]
+                });
+            }
+
+            // Matches tower chart with glow
+            const matchesCtx = document.getElementById('matchesChart');
+            if (matchesCtx) {
+                new Chart(matchesCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Ma', 'Ti', 'Ke', 'To', 'Pe', 'La', 'Su'],
+                        datasets: [{
+                            data: [2, 1, 3, 0, 2, 4, 1],
+                            borderColor: '#1d2333',
+                            backgroundColor: 'rgba(29, 35, 51, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: '#1d2333',
+                            pointBorderWidth: 0,
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
+                        },
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1d2333',
+                                titleColor: '#8eff01',
+                                bodyColor: '#8eff01',
+                                padding: 12,
+                                cornerRadius: 8,
+                                displayColors: false,
+                                callbacks: {
+                                    label: (context) => `${context.parsed.y} matchit`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                grid: { display: false },
+                                ticks: { color: '#1d2333', font: { size: 11, weight: '600' } }
+                            },
+                            y: { 
+                                display: false,
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // BADGE CELEBRATION
+        function celebrateBadge(element, emoji) {
+            const badgeName = element.getAttribute('data-badge');
+            const overlay = document.getElementById('badgeCelebration');
+            const badgeText = document.getElementById('badgeText');
+            
+            // Näytä iso teksti
+            badgeText.textContent = badgeName;
+            overlay.style.display = 'flex';
+            
+            // Luo konfetti ikoneja
+            for (let i = 0; i < 30; i++) {
+                createBadgeConfetti(emoji);
+            }
+            
+            // Sulje 2 sekunnin kuluttua
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 2000);
+        }
+        
+        function createBadgeConfetti(emoji) {
+            const confetti = document.createElement('div');
+            confetti.textContent = emoji;
+            confetti.style.position = 'fixed';
+            confetti.style.fontSize = '40px';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.top = '-50px';
+            confetti.style.zIndex = '10001';
+            confetti.style.pointerEvents = 'none';
+            confetti.style.animation = `confettiFall ${2 + Math.random() * 2}s linear forwards`;
+            
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => {
+                confetti.remove();
+            }, 4000);
+        }
+
+        // Init charts after a short delay to ensure elements exist
+        setTimeout(initCharts, 100);
+    </script>
+</body>
+</html>
